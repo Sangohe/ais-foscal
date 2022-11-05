@@ -55,18 +55,25 @@ def create_foscal_dataset(
 
         # Get the normalized data.
         data = patient.get_data(modalities=modalities, normalization=normalization)
-        mask = patient.get_mask()
+        masks = patient.get_mask(modalities=modalities)
 
         if volumes:
             # Slices first.
             modalities_volumes = {
                 k: expand_last_dim(v.transpose(2, 0, 1)) for k, v in data.items()
             }
-            modalities_volumes["mask"] = expand_last_dim(mask.transpose(2, 0, 1))
-            mask_with_contours = get_mask_with_contours(mask, contour_thickness=1)
-            modalities_volumes["mask_with_contours"] = expand_last_dim(
-                mask_with_contours.transpose(2, 0, 1)
-            )
+            modalities_masks = {
+                f"{k}_mask": expand_last_dim(v.transpose(2, 0, 1))
+                for k, v in masks.items()
+            }
+            modalities_masks_contours = {
+                f"{k}_mask_with_contours": expand_last_dim(
+                    get_mask_with_contours(v, contour_thickness=1).transpose(2, 0, 1)
+                )
+                for k, v in masks.items()
+            }
+            modalities_volumes.update(modalities_masks)
+            modalities_volumes.update(modalities_masks_contours)
             serialized_features = serialize_3d_example(modalities_volumes)
             tfrecord_writer.write(serialized_features)
             num_samples += 1
@@ -76,13 +83,18 @@ def create_foscal_dataset(
                 modalities_slices = {
                     k: expand_last_dim(v[..., slice_idx]) for k, v in data.items()
                 }
-                modalities_slices["mask"] = expand_last_dim(mask[..., slice_idx])
-                mask_with_contours = get_mask_with_contours(
-                    mask[..., slice_idx], contour_thickness=1
-                )
-                modalities_slices["mask_with_contours"] = expand_last_dim(
-                    mask_with_contours
-                )
+                modalities_slices_mask = {
+                    f"{k}_mask": expand_last_dim(v[..., slice_idx])
+                    for k, v in masks.items()
+                }
+                modalities_slices_mask_contours = {
+                    f"{k}_mask_with_contours": expand_last_dim(
+                        get_mask_with_contours(v[..., slice_idx], contour_thickness=1)
+                    )
+                    for k, v in masks.items()
+                }
+                modalities_slices.update(modalities_slices_mask)
+                modalities_slices.update(modalities_slices_mask_contours)
                 serialized_features = serialize_2d_example(modalities_slices)
                 tfrecord_writer.write(serialized_features)
                 num_samples += 1

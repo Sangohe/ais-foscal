@@ -9,7 +9,7 @@ from ...preprocessing.numpy import z_normalization, min_max_normalization
 
 
 class FOSCALPatient:
-    """ "Utility class for loading the information of a patient."""
+    """Utility class for loading the information of a patient."""
 
     def __init__(self, patient_dir: str) -> None:
 
@@ -59,13 +59,15 @@ class FOSCALPatient:
     def get_mask(
         self,
         modalities: List[str] = ["ADC", "DWI"],
+        radiologist: str = "Daniel",
     ) -> Dict[str, np.ndarray]:
         """Returns the OT data within a dictionary. Implemented because the
         normalization kwarg could case problems when returning the OT
         with the get_data function."""
         masks = {}
         for modality in modalities:
-            modality_mask = getattr(self, f"{modality.lower()}_mask").get_fdata()
+            key = f"{modality.lower()}_{radiologist.lower()}_mask"
+            modality_mask = getattr(self, key).get_fdata()
             modality_mask = modality_mask.astype(np.float32)
             masks[modality] = modality_mask
         return masks
@@ -118,12 +120,15 @@ class FOSCALPatient:
         modality_mask_path = modality_mask_matches[0]
 
         modality_mask = nib.load(modality_mask_path)
-        setattr(self, f"{modality_name}_mask_path", modality_mask_path)
-        setattr(self, f"{modality_name}_mask", modality_mask)
+        setattr(
+            self, f"{modality_name}_{radiologist.lower()}_mask_path", modality_mask_path
+        )
+        setattr(self, f"{modality_name}_{radiologist.lower()}_mask", modality_mask)
 
         modality = getattr(self, modality_name)
         shape_is_equal = modality.shape == modality_mask.shape
         if not shape_is_equal and modality_name != "dwi":
             print(
                 f"{modality_name} and mask shapes do not match -> {modality.shape} != {modality_mask.shape}"
+                f"for the radiologist {radiologist}"
             )
