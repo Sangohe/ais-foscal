@@ -1,0 +1,16 @@
+test:
+- /data/Datasets/stroke/ISBI_FOSCAL/ACV-043
+- /data/Datasets/stroke/ISBI_FOSCAL/ACV-051
+- /data/Datasets/stroke/ISBI_FOSCAL/ACV-046
+train:
+- /data/Datasets/stroke/ISBI_FOSCAL/ACV-033
+- /data/Datasets/stroke/ISBI_FOSCAL/ACV-044
+- /data/Datasets/stroke/ISBI_FOSCAL/ACV-034
+- /data/Datasets/stroke/ISBI_FOSCAL/ACV-006
+- /data/Datasets/stroke/ISBI_FOSCAL/ACV-005
+- /data/Datasets/stroke/ISBI_FOSCAL/ACV-014
+- /data/Datasets/stroke/ISBI_FOSCAL/ACV-019
+- /data/Datasets/stroke/ISBI_FOSCAL/ACV-021
+- /data/Datasets/stroke/ISBI_FOSCAL/ACV-052
+- /data/Datasets/stroke/ISBI_FOSCAL/ACV-036
+- /data/Datasets/stroke/ISBI_FOSCAL/ACV-031
