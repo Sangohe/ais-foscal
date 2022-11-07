@@ -1,0 +1,16 @@
+CMD: 'python run.py'
+HPARAMS:
+  RUNX.TAG: 'FullTrain'
+  config: [
+    "configs/run.py:unet,/home/sangohe/projects/isbi2023-foscal/data/FOSCAL_slices_min_max_norm/fold_4,dual_segmentation_train",
+  ]
+  config.dataloader.batch_size: 16
+  config.epochs: 300
+  config.model.dropout_rate: 0.3
+  config.model.norm_layer: tf.keras.layers.BatchNormalization
+  config.model.filters_per_level: "32,64,128,256,512,1024"
+  config.model.blocks_depth: "2,2,2,2,2,2"
+  config.model.attention_layer: [models.conv_layers.AdditiveCrossAttention]
+  config.mixed_precision: [false]
+  config.base_lr: 5e-3
+  config.dataloader.modalities: ["ADC,DWI"]
