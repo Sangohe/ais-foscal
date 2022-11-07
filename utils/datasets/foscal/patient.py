@@ -17,8 +17,12 @@ class FOSCALPatient:
             self.patient_dir = patient_dir
             self.patient_id = patient_dir.split("/")[-1]
             self.content = os.listdir(patient_dir)
-
             self.load_niftis()
+
+            if hasattr(self, "adc_shape"):
+                self.original_shape = self.adc_shape
+            else:
+                self.original_shape = self.dwi_shape
         else:
             raise ValueError("patient_dir does not exist or is not a directory.")
 
