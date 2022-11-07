@@ -2,6 +2,10 @@ CMD: 'python run.py'
 HPARAMS:
   RUNX.TAG: 'FullTrain'
   config: [
+    "configs/run.py:unet,/home/sangohe/projects/isbi2023-foscal/data/FOSCAL_slices_min_max_norm/fold_0,dual_segmentation_train",
+    "configs/run.py:unet,/home/sangohe/projects/isbi2023-foscal/data/FOSCAL_slices_min_max_norm/fold_1,dual_segmentation_train",
+    "configs/run.py:unet,/home/sangohe/projects/isbi2023-foscal/data/FOSCAL_slices_min_max_norm/fold_2,dual_segmentation_train",
+    "configs/run.py:unet,/home/sangohe/projects/isbi2023-foscal/data/FOSCAL_slices_min_max_norm/fold_3,dual_segmentation_train",
     "configs/run.py:unet,/home/sangohe/projects/isbi2023-foscal/data/FOSCAL_slices_min_max_norm/fold_4,dual_segmentation_train",
   ]
   config.dataloader.batch_size: 16
