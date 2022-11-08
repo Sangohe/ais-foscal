@@ -55,7 +55,7 @@ def create_foscal_dataset(
 
         # Get the normalized data.
         data = patient.get_data(modalities=modalities, normalization=normalization)
-        masks = patient.get_mask(modalities=modalities)
+        masks = patient.get_mask(modalities=modalities, radiologist="Daniel")
 
         if volumes:
             # Slices first.

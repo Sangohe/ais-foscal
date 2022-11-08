@@ -126,6 +126,102 @@ def UNetEncoder(
     return tf.keras.Model(inputs=inputs, outputs=x, name=name)
 
 
+def DualUnet(
+    input_shape: Tuple[int, int, int],
+    filters_per_level: List[int],
+    num_classes: int,
+    activation: str = "relu",
+    out_activation: Literal["sigmoid", "softmax"] = "sigmoid",
+    kernel_size: IntOrIntTuple = 3,
+    strides: IntOrIntTuple = 1,
+    dilation_rate: IntOrIntTuple = 1,
+    padding: str = "same",
+    pooling_layer: Any = layers.MaxPooling2D,
+    norm_layer: Optional[Any] = layers.BatchNormalization,
+    upsample_layer: Any = layers.UpSampling2D,
+    attention_layer: Optional[Any] = None,
+    dropout_rate: float = 0.0,
+    blocks_depth: Union[int, List[int]] = 2,
+    **kwargs,
+):
+
+    e1 = UNetEncoder(
+        input_shape,
+        filters_per_level,
+        activation=activation,
+        kernel_size=kernel_size,
+        strides=strides,
+        dilation_rate=dilation_rate,
+        padding=padding,
+        norm_layer=norm_layer,
+        pooling_layer=pooling_layer,
+        blocks_depth=blocks_depth,
+        dropout_rate=dropout_rate,
+        name="adc_unet",
+    )
+    e2 = UNetEncoder(
+        input_shape,
+        filters_per_level,
+        activation=activation,
+        kernel_size=kernel_size,
+        strides=strides,
+        dilation_rate=dilation_rate,
+        padding=padding,
+        norm_layer=norm_layer,
+        pooling_layer=pooling_layer,
+        blocks_depth=blocks_depth,
+        dropout_rate=dropout_rate,
+        name="dwi_unet",
+    )
+
+    e1_skips = get_skip_names_from_encoder(e1)
+    e2_skips = get_skip_names_from_encoder(e2)
+
+    # Create a model that shares the embedding.
+    joint_bottleneck = layers.Concatenate(name="joint_bottleneck")(
+        [e1.output, e2.output]
+    )
+    m = tf.keras.Model(inputs=[e1.input, e2.input], outputs=joint_bottleneck)
+
+    u1 = UNet(
+        m,
+        e1_skips,
+        num_classes,
+        activation=activation,
+        out_activation=out_activation,
+        kernel_size=kernel_size,
+        strides=strides,
+        dilation_rate=dilation_rate,
+        padding=padding,
+        norm_layer=norm_layer,
+        upsample_layer=upsample_layer,
+        attention_layer=attention_layer,
+        dropout_rate=dropout_rate,
+        blocks_depth=blocks_depth,
+        name="adc_unet",
+    )
+    u2 = UNet(
+        m,
+        e2_skips,
+        num_classes,
+        activation=activation,
+        out_activation=out_activation,
+        kernel_size=kernel_size,
+        strides=strides,
+        dilation_rate=dilation_rate,
+        padding=padding,
+        norm_layer=norm_layer,
+        upsample_layer=upsample_layer,
+        attention_layer=attention_layer,
+        dropout_rate=dropout_rate,
+        blocks_depth=blocks_depth,
+        name="dwi_unet",
+    )
+
+    multimodal_unet = tf.keras.Model(inputs=m.inputs, outputs=[u1.output, u2.output])
+    return multimodal_unet
+
+
 # ---------------------------------------------------------------------------------
 # Main blocks.
 

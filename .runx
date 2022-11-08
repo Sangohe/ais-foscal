@@ -1,0 +1,2 @@
+LOGROOT: /home/sangohe/projects/ais-segmentation/runx/
+CODE_IGNORE_PATTERNS: 'data,results*,runx*,prototyping*,__pycache__*,.git*, .ipynb_checkpoints*,gifs*,notebooks*'
