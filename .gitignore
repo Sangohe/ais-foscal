@@ -1,12 +1,14 @@
 __pycache__/
 .idea/
 .ipynb_checkpoints/
+.vscode/
 
 runx/
 data/
 results/
 figures/
 gifs/
+figs/
 
 scratchpad.ipynb
 experimental/

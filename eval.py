@@ -24,6 +24,7 @@ def segmentation_eval(
     model: tf.keras.Model,
     config: ml_collections.ConfigDict,
     subdir: Optional[str] = None,
+    radiologist: str = "Daniel",
     submission_desc: str = "",
 ):
 
@@ -71,7 +72,7 @@ def segmentation_eval(
             shutil.copy(getattr(patient, mask_attr + "_path"), niftis_dir)
 
             # Compute metrics.
-            mask = patient.get_mask(modalities=modalities, radiologist="Daniel")[
+            mask = patient.get_mask(modalities=modalities, radiologist=radiologist)[
                 modalities[0]
             ]
             vol_metrics = compute_segmentation_metrics(mask, resized_pred_mask)
@@ -118,6 +119,7 @@ def dual_segmentation_eval(
     model: tf.keras.Model,
     config: ml_collections.ConfigDict,
     subdir: Optional[str] = None,
+    radiologist: str = "Daniel",
     submission_desc: str = "",
 ):
 
@@ -173,7 +175,9 @@ def dual_segmentation_eval(
         shutil.copy(getattr(patient, "dwi_daniel_mask_path"), niftis_dir)
 
         # Compute metrics.
-        adc_mask = patient.get_mask(modalities=modalities, radiologist="Daniel")["ADC"]
+        adc_mask = patient.get_mask(modalities=modalities, radiologist=radiologist)[
+            "ADC"
+        ]
         adc_vol_metrics = compute_segmentation_metrics(adc_mask, adc_resized_pred_mask)
         adc_results["patient"].append(patient.patient_id)
         for m in metric_names:
@@ -201,7 +205,9 @@ def dual_segmentation_eval(
             titles=title,
         )
 
-        dwi_mask = patient.get_mask(modalities=modalities, radiologist="Daniel")["DWI"]
+        dwi_mask = patient.get_mask(modalities=modalities, radiologist=radiologist)[
+            "DWI"
+        ]
         dwi_vol_metrics = compute_segmentation_metrics(dwi_mask, dwi_resized_pred_mask)
         dwi_results["patient"].append(patient.patient_id)
         for m in metric_names:

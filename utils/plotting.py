@@ -465,7 +465,8 @@ def overlay_masks_on_data(
     pred_color: Color = BLUE_COLOR,
 ) -> np.ndarray:
 
-    data = convert_slices_from_gray_to_rgb(data)
+    if data.ndim == 3:
+        data = convert_slices_from_gray_to_rgb(data)
 
     if true_mask_with_contours:
         true_mask = convert_mask_to_contours(true_mask)
