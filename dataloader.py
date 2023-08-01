@@ -78,9 +78,13 @@ class TFSlicesDataloader:
             True
             ValueError: num_lods is a negative integer
         """
-        feature_description = get_feature_description_with_modalities(
-            modalities, volumes=False
-        )
+
+        if "FOSCAL" in tfrecord_path:
+            get_feature_description_fn = tfp.get_feature_description_with_modalities
+        else:
+            get_feature_description_fn = get_feature_description_with_modalities
+
+        feature_description = get_feature_description_fn(modalities, volumes=False)
         medical_image_feature_names = [
             feature_name
             for feature_name in feature_description.keys()
@@ -141,7 +145,10 @@ class TFSlicesDataloader:
         if self.mask_with_contours:
             parse_method = tfp.parse_2d_with_contours_tf_example
         else:
-            parse_method = parse_2d_tf_example
+            if "FOSCAL" in tfrecord_path:
+                parse_method = parse_2d_tf_example
+            else:
+                parse_method = tfp.parse_2d_tf_example
 
         self._parse_fn = partial(
             parse_method,
@@ -162,7 +169,7 @@ class TFSlicesDataloader:
             tfp.resize_data_and_mask, target_size=self.target_size
         )
         self._set_shape_fn = partial(
-            set_shapes,
+            set_shapes if "FOSCAL" in tfrecord_path else tfp.set_shapes,
             height=slice_size,
             width=slice_size,
             data_channels=self.n_channels,
@@ -171,7 +178,10 @@ class TFSlicesDataloader:
         if augmentations:
             self.transformation = self.compose_augmentations()
             self._aug_fn = partial(
-                augment_data_and_mask, transformation=self.transformation
+                augment_data_and_mask
+                if "FOSCAL" in tfrecord_path
+                else tfp.augment_data_and_mask,
+                transformation=self.transformation,
             )
 
         if sample_weights:
@@ -240,7 +250,6 @@ class TFSlicesDataloader:
         # !: -----------------------------------------------------------------------
 
     def get_dataset(self):
-
         # Reading, parsing and filtering.
         dset = tf.data.TFRecordDataset(self.tfrecord_path)
         dset = dset.map(self._parse_fn, num_parallel_calls=AUTOTUNE)
@@ -256,7 +265,9 @@ class TFSlicesDataloader:
         if self.augmentations:
             dset = dset.map(self._aug_fn, num_parallel_calls=AUTOTUNE)
         dset = dset.map(self._set_shape_fn, num_parallel_calls=AUTOTUNE)
-        dset = dset.map(split, num_parallel_calls=AUTOTUNE)
+        if "FOSCAL" in self.tfrecord_path:
+            dset = dset.map(split, num_parallel_calls=AUTOTUNE)
+        dset = dset.map(binarize_mask, num_parallel_calls=AUTOTUNE)  # !: work around.
         if self.sample_weights:
             dset = dset.map(self._weights_fn, num_parallel_calls=AUTOTUNE)
 
@@ -268,7 +279,6 @@ class TFSlicesDataloader:
         return dset
 
     def get_dataset_cls(self):
-
         # Reading, parsing and filtering.
         dset = tf.data.TFRecordDataset(self.tfrecord_path)
         dset = dset.map(self._parse_cls_fn, num_parallel_calls=AUTOTUNE)
@@ -291,7 +301,6 @@ class TFSlicesDataloader:
         return dset
 
     def get_dataset_denoising(self):
-
         # Reading, parsing and filtering.
         dset = tf.data.TFRecordDataset(self.tfrecord_path)
         dset = dset.map(self._parse_den_fn, num_parallel_calls=AUTOTUNE)
@@ -323,12 +332,12 @@ class TFSlicesDataloader:
                 A.HorizontalFlip(p=0.5),
                 A.Transpose(p=0.5),
                 A.Rotate(limit=7, p=0.5),
-                A.RandomBrightnessContrast(
-                    brightness_limit=0.1, contrast_limit=0.1, p=0.0
-                ),
-                A.ElasticTransform(alpha=5, sigma=1.5, alpha_affine=0.8, p=0.5),
-                A.GridDistortion(distort_limit=0.1, p=0.5),
-                A.OpticalDistortion(distort_limit=0.5, shift_limit=0.5, p=0.5),
+                # A.RandomBrightnessContrast(
+                #     brightness_limit=0.1, contrast_limit=0.1, p=0.0
+                # ),
+                # A.ElasticTransform(alpha=5, sigma=1.5, alpha_affine=0.8, p=0.5),
+                # A.GridDistortion(distort_limit=0.1, p=0.5),
+                # A.OpticalDistortion(distort_limit=0.5, shift_limit=0.5, p=0.5),
             ],
             additional_targets=additional_targets,
         )
@@ -390,9 +399,14 @@ class TFSlicesValidationDataloader:
             ValueError: num_lods is a negative integer
         """
 
-        feature_description = get_feature_description_with_modalities(
-            modalities, volumes=True
-        )
+        if "FOSCAL" in tfrecord_path:
+            get_feature_description_fn = (
+                get_feature_description_with_modalities_and_masks
+            )
+        else:
+            get_feature_description_fn = get_feature_description_with_modalities
+
+        feature_description = get_feature_description_fn(modalities, volumes=True)
 
         medical_image_feature_names = [
             feature_name
@@ -435,7 +449,10 @@ class TFSlicesValidationDataloader:
         if self.mask_with_contours:
             parse_method = tfp.parse_3d_with_contours_tf_example
         else:
-            parse_method = parse_3d_tf_example
+            if "FOSCAL" in tfrecord_path:
+                parse_method = parse_3d_tf_example
+            else:
+                parse_method = tfp.parse_3d_tf_example
 
         self._parse_fn = partial(
             parse_method,
@@ -450,7 +467,7 @@ class TFSlicesValidationDataloader:
             tfp.resize_data_and_mask, target_size=self.target_size
         )
         self._set_shape_fn = partial(
-            set_shapes_batch,
+            set_shapes_batch if "FOSCAL" in tfrecord_path else tfp.set_shapes_batch,
             height=slice_size,
             width=slice_size,
             data_channels=self.n_channels,
@@ -509,12 +526,13 @@ class TFSlicesValidationDataloader:
         # !: -----------------------------------------------------------------------
 
     def get_dataset(self):
-
         dset = tf.data.TFRecordDataset(self.tfrecord_path)
         dset = dset.map(self._parse_fn, num_parallel_calls=AUTOTUNE)
         dset = dset.map(self._resize_fn, num_parallel_calls=AUTOTUNE)
         dset = dset.map(self._set_shape_fn, num_parallel_calls=AUTOTUNE)
-        dset = dset.map(split, num_parallel_calls=AUTOTUNE)
+        if "FOSCAL" in self.tfrecord_path:
+            dset = dset.map(split, num_parallel_calls=AUTOTUNE)
+        dset = dset.map(binarize_mask, num_parallel_calls=AUTOTUNE)  # !: work around.
         if self.multiresolution:
             dset = dset.map(self._multiresolution_fn, num_parallel_calls=AUTOTUNE)
         if self.deep_supervision:
@@ -526,7 +544,6 @@ class TFSlicesValidationDataloader:
         return dset
 
     def get_dataset_cls(self):
-
         # Reading, parsing and filtering.
         dset = tf.data.TFRecordDataset(self.tfrecord_path)
         dset = dset.map(self._parse_cls_fn, num_parallel_calls=AUTOTUNE)
@@ -542,7 +559,6 @@ class TFSlicesValidationDataloader:
         return dset
 
     def get_dataset_denoising(self):
-
         # Reading, parsing and filtering.
         dset = tf.data.TFRecordDataset(self.tfrecord_path)
         dset = dset.map(self._parse_den_fn, num_parallel_calls=AUTOTUNE)
@@ -567,7 +583,48 @@ class TFSlicesValidationDataloader:
         self.n_channels = dset_list[0][0].shape[-1]
 
 
+def binarize_mask(data, mask):
+    return data, tf.cast(mask > 0, tf.float32)
+
+
 def get_feature_description_with_modalities(
+    modalities: List[str], volumes: bool = False
+) -> Dict[str, Any]:
+    """Takes a list of modalities and creates a dictionary to deserialize the features
+    from an example in a TFRecord file.
+
+    Args:
+        modalities (List[str]): modalities inside the TFRecord. Do not specify mask,
+        height or width as they are already considered.
+        volumes (bool): True to include the number of slices description. Defaults to False.
+
+    Raises:
+        ValueError: if `modalities` is empty
+
+    Returns:
+        Dict[str, Any]: dictionary with the description for each serialized feature.
+    """
+
+    if len(modalities) == 0:
+        raise ValueError("`modalities` list cannot be empty.")
+
+    feature_description = {
+        "height": tf.io.FixedLenFeature([], tf.int64),
+        "width": tf.io.FixedLenFeature([], tf.int64),
+    }
+
+    for modality in modalities:
+        feature_description[modality] = tf.io.FixedLenFeature([], tf.string)
+    feature_description[f"mask"] = tf.io.FixedLenFeature([], tf.string)
+    feature_description[f"mask_with_contours"] = tf.io.FixedLenFeature([], tf.string)
+
+    if volumes:
+        feature_description["num_slices"] = tf.io.FixedLenFeature([], tf.int64)
+
+    return feature_description
+
+
+def get_feature_description_with_modalities_and_masks(
     modalities: List[str], volumes: bool = False
 ) -> Dict[str, Any]:
     """Takes a list of modalities and creates a dictionary to deserialize the features

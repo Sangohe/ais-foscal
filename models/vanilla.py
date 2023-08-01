@@ -5,7 +5,7 @@ from tensorflow.keras import layers
 import re
 from typing import List, Optional, Tuple, Literal, Any, Union
 
-from .conv_layers import Prediction, DeepSupervision
+from .conv_layers import Prediction, DeepSupervision, AdditiveCrossAttention
 
 IntOrIntTuple = Union[int, Tuple[int, int, int]]
 
@@ -124,6 +124,133 @@ def UNetEncoder(
     )(x)
 
     return tf.keras.Model(inputs=inputs, outputs=x, name=name)
+
+
+# def DualUnet(
+#     input_shape: Tuple[int, int, int],
+#     filters_per_level: List[int],
+#     num_classes: int,
+#     activation: str = "relu",
+#     out_activation: Literal["sigmoid", "softmax"] = "sigmoid",
+#     kernel_size: IntOrIntTuple = 3,
+#     strides: IntOrIntTuple = 1,
+#     dilation_rate: IntOrIntTuple = 1,
+#     padding: str = "same",
+#     pooling_layer: Any = layers.MaxPooling2D,
+#     norm_layer: Optional[Any] = layers.BatchNormalization,
+#     upsample_layer: Any = layers.UpSampling2D,
+#     attention_layer: Optional[Any] = None,
+#     dropout_rate: float = 0.0,
+#     blocks_depth: Union[int, List[int]] = 2,
+#     **kwargs,
+# ):
+
+#     e1 = UNetEncoder(
+#         input_shape,
+#         filters_per_level,
+#         activation=activation,
+#         kernel_size=kernel_size,
+#         strides=strides,
+#         dilation_rate=dilation_rate,
+#         padding=padding,
+#         norm_layer=norm_layer,
+#         pooling_layer=pooling_layer,
+#         blocks_depth=blocks_depth,
+#         dropout_rate=dropout_rate,
+#         name="adc_unet",
+#     )
+#     e2 = UNetEncoder(
+#         input_shape,
+#         filters_per_level,
+#         activation=activation,
+#         kernel_size=kernel_size,
+#         strides=strides,
+#         dilation_rate=dilation_rate,
+#         padding=padding,
+#         norm_layer=norm_layer,
+#         pooling_layer=pooling_layer,
+#         blocks_depth=blocks_depth,
+#         dropout_rate=dropout_rate,
+#         name="dwi_unet",
+#     )
+
+#     print(e1.outputs, e2.outputs)
+#     # Create the cross-modality skip connections.
+#     e1_skips = get_skip_names_from_encoder(e1)
+#     e2_skips = get_skip_names_from_encoder(e2)
+
+#     # Create a model that shares the embedding.
+#     joint_bottleneck = layers.Concatenate(name="joint_bottleneck")(
+#         [e1.output, e2.output]
+#     )
+#     m = tf.keras.Model(inputs=[e1.input, e2.input], outputs=joint_bottleneck)
+
+#     # Decoder 1.
+#     x = e1.output
+#     if isinstance(blocks_depth, int):
+#         blocks_depth = [blocks_depth] * len(e1_skips)
+#     else:
+#         # Cut the last two elements because they belong to the bottleneck.
+#         blocks_depth = blocks_depth[:-2]
+
+#     for i, (e1_skip_name, e2_skip_name, depth) in enumerate(
+#         zip(reversed(e1_skips), reversed(e2_skips), reversed(blocks_depth))
+#     ):
+
+#         e1_skip = e1.get_layer(e1_skip_name).output
+#         e2_skip = e2.get_layer(e2_skip_name).output
+#         x_skip = AdditiveCrossAttention(
+#             e1_skip.shape[-1], name=f"adc_cross_mod_att_skip_{i}"
+#         )([e2_skip, e1_skip])
+
+#         x = UpBlock(
+#             x_skip.shape[-1],
+#             activation=activation,
+#             kernel_size=kernel_size,
+#             strides=strides,
+#             dilation_rate=dilation_rate,
+#             padding=padding,
+#             norm_layer=norm_layer,
+#             upsample_layer=upsample_layer,
+#             attention_layer=attention_layer,
+#             dropout_rate=dropout_rate,
+#             depth=depth,
+#             name=e1.name + f"_up_{i}",
+#         )([x, x_skip])
+#     x = Prediction(num_classes, out_activation, name=e1.name + "_last")(x)
+#     u1 = tf.keras.Model(inputs=m.inputs, outputs=x, name=e1.name)
+
+#     # Decoder 2.
+#     x = e2.output
+#     for i, (e1_skip_name, e2_skip_name, depth) in enumerate(
+#         zip(reversed(e1_skips), reversed(e2_skips), reversed(blocks_depth))
+#     ):
+
+#         e1_skip = e1.get_layer(e1_skip_name).output
+#         e2_skip = e2.get_layer(e2_skip_name).output
+#         x_skip = AdditiveCrossAttention(
+#             e2_skip.shape[-1], name=f"dwi_cross_mod_att_skip_{i}"
+#         )([e1_skip, e2_skip])
+
+#         x = UpBlock(
+#             x_skip.shape[-1],
+#             activation=activation,
+#             kernel_size=kernel_size,
+#             strides=strides,
+#             dilation_rate=dilation_rate,
+#             padding=padding,
+#             norm_layer=norm_layer,
+#             upsample_layer=upsample_layer,
+#             attention_layer=attention_layer,
+#             dropout_rate=dropout_rate,
+#             depth=depth,
+#             name=e2.name + f"_up_{i}",
+#         )([x, x_skip])
+#     x = Prediction(num_classes, out_activation, name=e2.name + "_last")(x)
+#     u2 = tf.keras.Model(inputs=m.inputs, outputs=x, name=e2.name)
+
+#     multimodal_unet = tf.keras.Model(inputs=m.inputs, outputs=[u1.output, u2.output])
+#     return multimodal_unet
 
 
 def DualUnet(

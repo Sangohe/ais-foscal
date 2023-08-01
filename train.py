@@ -144,8 +144,9 @@ def segmentation_train(
     else:
         model = model_module.UNet(encoder, skip_names, **model_config)
 
-    hidden_layer_names = model_module.get_output_names_for_deep_supervision(model)
-    model = model_module.add_deep_supervision_to_unet(model, hidden_layer_names)
+    # if config.deep_supervision:
+    #     hidden_layer_names = model_module.get_output_names_for_deep_supervision(model)
+    #     model = model_module.add_deep_supervision_to_unet(model, hidden_layer_names)
     model.trainable = True
 
     opt = AdamW(
@@ -198,7 +199,8 @@ def segmentation_train(
         if config.dataloader.num_lods is None:
             metric_to_monitor = "val_binary_dice"
         else:
-            metric_to_monitor = f"val_{config.model.name}_last_probs_binary_dice"
+            # metric_to_monitor = f"val_{config.model.name}_last_probs_binary_dice"
+            metric_to_monitor = "val_binary_dice"
         callbacks.append(
             tf.keras.callbacks.ModelCheckpoint(
                 config.best_weights_path,
@@ -364,9 +366,12 @@ def dual_segmentation_train(
     model_config["upsample_layer"] = import_method_from_config(
         config.model, "upsample_layer"
     )
-    model_config["attention_layer"] = import_method_from_config(
-        config.model, "attention_layer"
-    )
+    if config.model.attention_layer is not None:
+        model_config["attention_layer"] = import_method_from_config(
+            config.model, "attention_layer"
+        )
+    else:
+        model_config["attention_layer"] = None
     model_config["pooling_layer"] = import_method_from_config(
         config.model, "pooling_layer"
     )
@@ -434,7 +439,7 @@ def dual_segmentation_train(
         callbacks.append(
             tf.keras.callbacks.ModelCheckpoint(
                 config.best_weights_path,
-                monitor=metric_to_monitor,
+                monitor=config.metric_to_monitor,
                 verbose=1,
                 save_best_only=True,
                 save_weights_only=True,

@@ -16,7 +16,7 @@ def get_dataloader_config(dset_dir: str) -> ml_collections.ConfigDict:
 
     # Paths to TFRecords.
     config.train_tfrecord_path = os.path.join(dset_dir, dset_cfg["train_tfrecord"])
-    config.valid_tfrecord_path = os.path.join(dset_dir, dset_cfg["test_tfrecord"])
+    config.valid_tfrecord_path = os.path.join(dset_dir, dset_cfg["valid_tfrecord"])
     if "full_train_tfrecord" in dset_cfg:
         config.full_train_tfrecord_path = os.path.join(
             dset_dir, dset_cfg["full_train_tfrecord"]
@@ -24,7 +24,7 @@ def get_dataloader_config(dset_dir: str) -> ml_collections.ConfigDict:
 
     # Paths to patients list.
     config.train_patients_path = os.path.join(dset_dir, dset_cfg["train_patients_path"])
-    config.valid_patients_path = os.path.join(dset_dir, dset_cfg["test_patients_path"])
+    config.valid_patients_path = os.path.join(dset_dir, dset_cfg["valid_patients_path"])
     if "full_train_patients_path" in dset_cfg:
         config.full_train_patients_path = os.path.join(
             dset_dir, dset_cfg["full_train_patients_path"]

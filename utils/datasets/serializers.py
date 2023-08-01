@@ -73,6 +73,8 @@ def serialize_2d_example(data_dict: Dict[str, np.ndarray]):
 
     modalities_names = list(data_dict.keys())
     first_modality_shape = data_dict[modalities_names[0]].shape[:2]
+    if not all(v.shape[:2] == first_modality_shape for v in data_dict.values()):
+        print({k: v.shape[:2] for k, v in data_dict.items()})
     assert all(v.shape[:2] == first_modality_shape for v in data_dict.values())
 
     # Serialize all the images with their corresponding key.

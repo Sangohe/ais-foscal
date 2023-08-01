@@ -24,7 +24,7 @@ def segmentation_eval(
     model: tf.keras.Model,
     config: ml_collections.ConfigDict,
     subdir: Optional[str] = None,
-    radiologist: str = "Daniel",
+    radiologist: str = "Andres",
     submission_desc: str = "",
 ):
 
@@ -119,7 +119,7 @@ def dual_segmentation_eval(
     model: tf.keras.Model,
     config: ml_collections.ConfigDict,
     subdir: Optional[str] = None,
-    radiologist: str = "Daniel",
+    radiologist: str = "Andres",
     submission_desc: str = "",
 ):
 
@@ -171,8 +171,8 @@ def dual_segmentation_eval(
         # Save each prediction and mask.
         niftis_dir = os.path.join(patient_dir, "niftis")
         os.makedirs(niftis_dir, exist_ok=True)
-        shutil.copy(getattr(patient, "adc_daniel_mask_path"), niftis_dir)
-        shutil.copy(getattr(patient, "dwi_daniel_mask_path"), niftis_dir)
+        shutil.copy(getattr(patient, "adc_andres_mask_path"), niftis_dir)
+        shutil.copy(getattr(patient, "dwi_andres_mask_path"), niftis_dir)
 
         # Compute metrics.
         adc_mask = patient.get_mask(modalities=modalities, radiologist=radiologist)[

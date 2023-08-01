@@ -1,14 +1,11 @@
 CMD: 'python run.py'
 HPARAMS:
-  RUNX.TAG: 'FullTrain'
+  RUNX.TAG: 'MICCAI2023Rebuttal'
   config: [
-    "configs/run.py:unet,/home/sangohe/projects/isbi2023-foscal/data/FOSCAL_slices_min_max_norm/fold_0,segmentation_train",
-    "configs/run.py:unet,/home/sangohe/projects/isbi2023-foscal/data/FOSCAL_slices_min_max_norm/fold_1,segmentation_train",
-    "configs/run.py:unet,/home/sangohe/projects/isbi2023-foscal/data/FOSCAL_slices_min_max_norm/fold_2,segmentation_train",
-    "configs/run.py:unet,/home/sangohe/projects/isbi2023-foscal/data/FOSCAL_slices_min_max_norm/fold_3,segmentation_train",
-    "configs/run.py:unet,/home/sangohe/projects/isbi2023-foscal/data/FOSCAL_slices_min_max_norm/fold_4,segmentation_train"
+    "configs/run.py:unet,/home/sangohe/projects/isbi2023-foscal/data/ISLES2022_slices_min_max_norm/fold_0,segmentation_train",
+    "configs/run.py:unet,/home/sangohe/projects/isbi2023-foscal/data/ISLES2022_slices_min_max_norm/fold_1,segmentation_train",
   ]
-  config.dataloader.batch_size: 16
+  config.dataloader.batch_size: 64
   config.epochs: 300
   config.model.dropout_rate: 0.3
   config.model.norm_layer: tf.keras.layers.BatchNormalization

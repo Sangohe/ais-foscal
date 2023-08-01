@@ -88,6 +88,7 @@ class FOSCALPatient:
         assert (
             len(modality_matches) == 1
         ), f"Found more than one {modality_name.upper()} directory."
+        # print(self.patient_dir)
         modality_dir = modality_matches[0]
 
         modality_dir_content = glob(os.path.join(modality_dir, "*.nii*"))
@@ -121,18 +122,22 @@ class FOSCALPatient:
             print(
                 f"Found more than one {modality_name.upper()} mask for {radiologist}."
             )
-        modality_mask_path = modality_mask_matches[0]
 
-        modality_mask = nib.load(modality_mask_path)
-        setattr(
-            self, f"{modality_name}_{radiologist.lower()}_mask_path", modality_mask_path
-        )
-        setattr(self, f"{modality_name}_{radiologist.lower()}_mask", modality_mask)
+        if len(modality_mask_matches) == 1:
+            modality_mask_path = modality_mask_matches[0]
 
-        modality = getattr(self, modality_name)
-        shape_is_equal = modality.shape == modality_mask.shape
-        if not shape_is_equal and modality_name != "dwi":
-            print(
-                f"{modality_name} and mask shapes do not match -> {modality.shape} != {modality_mask.shape}"
-                f"for the radiologist {radiologist}"
+            modality_mask = nib.load(modality_mask_path)
+            setattr(
+                self,
+                f"{modality_name}_{radiologist.lower()}_mask_path",
+                modality_mask_path,
             )
+            setattr(self, f"{modality_name}_{radiologist.lower()}_mask", modality_mask)
+
+            modality = getattr(self, modality_name)
+            shape_is_equal = modality.shape == modality_mask.shape
+            if not shape_is_equal and modality_name != "dwi":
+                print(
+                    f"{self.patient_id}: {modality_name} and mask shapes do not match -> "
+                    f"{modality.shape} != {modality_mask.shape} for the radiologist {radiologist}"
+                )

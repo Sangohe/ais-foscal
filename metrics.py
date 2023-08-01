@@ -60,17 +60,21 @@ class BinaryDiceScore(Metric):
         if y_true.shape.ndims > 1:
             y_true = tf.reshape(y_true, [-1])
 
-        intersection = tf.math.logical_and(y_true, y_pred)
-        intersection_sum = tf.cast(
-            tf.math.count_nonzero(intersection), dtype=self._dtype
-        )
-
-        if intersection_sum == 0:
-            current_dice = 0.0
+        y_sum = tf.math.count_nonzero(y_pred) + tf.math.count_nonzero(y_true)
+        if y_sum == 0:
+            current_dice = 1.0
         else:
-            true_size = tf.cast(tf.math.count_nonzero(y_true), dtype=self._dtype)
-            pred_size = tf.cast(tf.math.count_nonzero(y_pred), dtype=self._dtype)
-            current_dice = 2 * intersection_sum / (true_size + pred_size)
+            intersection = tf.math.logical_and(y_true, y_pred)
+            intersection_sum = tf.cast(
+                tf.math.count_nonzero(intersection), dtype=self._dtype
+            )
+
+            if intersection_sum == 0:
+                current_dice = 0.0
+            else:
+                true_size = tf.cast(tf.math.count_nonzero(y_true), dtype=self._dtype)
+                pred_size = tf.cast(tf.math.count_nonzero(y_pred), dtype=self._dtype)
+                current_dice = 2 * intersection_sum / (true_size + pred_size)
 
         return current_dice
 
@@ -203,14 +207,20 @@ def compute_lesion_confusion_matrix(y_true, y_pred):
 
 
 def dice_coef(y_true, y_pred, smooth=0.01):
-    intersection = np.sum(np.logical_and(y_true, y_pred))
+    y_sum = y_true.sum() + y_pred.sum()
 
-    if intersection > 0:
-        return (2.0 * intersection + smooth) / (
-            np.sum(y_true) + np.sum(y_pred) + smooth
-        )
+    # If both are empty, then the dice is 1.
+    if y_sum == 0:
+        return 1.0
     else:
-        return 0.0
+        intersection = np.sum(np.logical_and(y_true, y_pred))
+
+        if intersection > 0:
+            return (2.0 * intersection + smooth) / (
+                np.sum(y_true) + np.sum(y_pred) + smooth
+            )
+        else:
+            return 0.0
 
 
 def compute_segmentation_metrics(y_true, y_pred, lesion_metrics=False, exclude=None):

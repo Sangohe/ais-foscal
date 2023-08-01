@@ -38,6 +38,9 @@ def get_dual_segmentation_train_config():
     # Optimization.
     config.loss_name = "binary_focal_crossentropy"
 
+    # Patch.
+    config.metric_to_monitor = "val_adc_unet_last_probs_binary_dice"
+
     return config
 
 
@@ -73,7 +76,7 @@ def get_common_config():
     config.root_dir = "/home/sangohe/projects/isbi2023-foscal/results/"
 
     config.use_ema = True
-    config.slice_size = 224
+    config.slice_size = 112
     config.mixed_precision = False
 
     # Optimization.
@@ -87,5 +90,8 @@ def get_common_config():
     # Will be set from ./models.py and ./dataloaders.py
     config.model = None
     config.dataloader = None
+
+    # !: fix later.
+    config.metric_to_monitor = ""
 
     return config
